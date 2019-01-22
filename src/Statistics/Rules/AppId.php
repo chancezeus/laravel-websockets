@@ -2,14 +2,16 @@
 
 namespace BeyondCode\LaravelWebSockets\Statistics\Rules;
 
-use Illuminate\Contracts\Validation\Rule;
 use BeyondCode\LaravelWebSockets\Apps\AppProvider;
+use Illuminate\Contracts\Validation\Rule;
+use Illuminate\Support\Facades\App;
 
 class AppId implements Rule
 {
     public function passes($attribute, $value)
     {
-        $appProvider = app(AppProvider::class);
+        /** @var AppProvider $appProvider */
+        $appProvider = App::make(AppProvider::class);
 
         return $appProvider->findById($value) ? true : false;
     }

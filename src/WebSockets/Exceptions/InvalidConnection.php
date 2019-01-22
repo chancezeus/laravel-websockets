@@ -6,8 +6,6 @@ class InvalidConnection extends WebSocketException
 {
     public function __construct()
     {
-        $this->message = 'Invalid Connection';
-
-        $this->code = 4009;
+        parent::__construct('Invalid Connection', 4009);
     }
 }

@@ -2,27 +2,32 @@
 
 namespace BeyondCode\LaravelWebSockets\Console;
 
-use React\Socket\Connector;
-use Clue\React\Buzz\Browser;
-use Illuminate\Console\Command;
-use React\Dns\Config\Config as DnsConfig;
-use React\EventLoop\Factory as LoopFactory;
-use React\Dns\Resolver\Factory as DnsFactory;
-use React\Dns\Resolver\Resolver as ReactDnsResolver;
-use BeyondCode\LaravelWebSockets\Statistics\DnsResolver;
 use BeyondCode\LaravelWebSockets\Facades\StatisticsLogger;
 use BeyondCode\LaravelWebSockets\Facades\WebSocketsRouter;
-use BeyondCode\LaravelWebSockets\Server\Logger\HttpLogger;
-use BeyondCode\LaravelWebSockets\Server\WebSocketServerFactory;
 use BeyondCode\LaravelWebSockets\Server\Logger\ConnectionLogger;
+use BeyondCode\LaravelWebSockets\Server\Logger\HttpLogger;
 use BeyondCode\LaravelWebSockets\Server\Logger\WebsocketsLogger;
-use BeyondCode\LaravelWebSockets\WebSockets\Channels\ChannelManager;
+use BeyondCode\LaravelWebSockets\Server\WebSocketServerFactory;
+use BeyondCode\LaravelWebSockets\Statistics\DnsResolver;
 use BeyondCode\LaravelWebSockets\Statistics\Logger\HttpStatisticsLogger;
 use BeyondCode\LaravelWebSockets\Statistics\Logger\StatisticsLogger as StatisticsLoggerInterface;
+use BeyondCode\LaravelWebSockets\WebSockets\Channels\ChannelManager;
+use Clue\React\Buzz\Browser;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Config;
+use React\Dns\Config\Config as DnsConfig;
+use React\Dns\Resolver\Factory as DnsFactory;
+use React\Dns\Resolver\Resolver as ReactDnsResolver;
+use React\EventLoop\Factory as LoopFactory;
+use React\Socket\Connector;
 
 class StartWebSocketServer extends Command
 {
-    protected $signature = 'websockets:serve {--host=0.0.0.0} {--port=6001} {--debug : Forces the loggers to be enabled and thereby overriding the app.debug config setting } ';
+    protected $signature = 'websockets:serve
+                                { --host=0.0.0.0}
+                                { --port=6001}
+                                { --debug : Forces the loggers to be enabled and thereby overriding the app.debug config setting }';
 
     protected $description = 'Start the Laravel WebSocket Server';
 
@@ -47,63 +52,78 @@ class StartWebSocketServer extends Command
             ->startWebSocketServer();
     }
 
-    protected function configureStatisticsLogger()
+    /**
+     * @return $this
+     */
+    protected function configureStatisticsLogger(): StartWebSocketServer
     {
         $connector = new Connector($this->loop, [
             'dns' => $this->getDnsResolver(),
             'tls' => [
-                'verify_peer' => config('app.env') === 'production',
-                'verify_peer_name' => config('app.env') === 'production',
+                'verify_peer' => Config::get('app.env') === 'production',
+                'verify_peer_name' => Config::get('app.env') === 'production',
             ],
         ]);
 
         $browser = new Browser($this->loop, $connector);
 
-        app()->singleton(StatisticsLoggerInterface::class, function () use ($browser) {
-            return new HttpStatisticsLogger(app(ChannelManager::class), $browser);
+        App::singleton(StatisticsLoggerInterface::class, function () use ($browser) {
+            return new HttpStatisticsLogger(App::make(ChannelManager::class), $browser);
         });
 
-        $this->loop->addPeriodicTimer(config('websockets.statistics.interval_in_seconds'), function () {
+        $this->loop->addPeriodicTimer(Config::get('websockets.statistics.interval_in_seconds'), function () {
             StatisticsLogger::save();
         });
 
         return $this;
     }
 
-    protected function configureHttpLogger()
+    /**
+     * @return $this
+     */
+    protected function configureHttpLogger(): StartWebSocketServer
     {
-        app()->singleton(HttpLogger::class, function () {
+        App::singleton(HttpLogger::class, function () {
             return (new HttpLogger($this->output))
-                ->enable($this->option('debug') ?: config('app.debug'))
+                ->enable($this->option('debug') ?: Config::get('app.debug'))
                 ->verbose($this->output->isVerbose());
         });
 
         return $this;
     }
 
-    protected function configureMessageLogger()
+    /**
+     * @return $this
+     */
+    protected function configureMessageLogger(): StartWebSocketServer
     {
-        app()->singleton(WebsocketsLogger::class, function () {
+        App::singleton(WebsocketsLogger::class, function () {
             return (new WebsocketsLogger($this->output))
-                ->enable($this->option('debug') ?: config('app.debug'))
+                ->enable($this->option('debug') ?: Config::get('app.debug'))
                 ->verbose($this->output->isVerbose());
         });
 
         return $this;
     }
 
-    protected function configureConnectionLogger()
+    /**
+     * @return $this
+     */
+    protected function configureConnectionLogger(): StartWebSocketServer
     {
-        app()->bind(ConnectionLogger::class, function () {
+        App::bind(ConnectionLogger::class, function () {
             return (new ConnectionLogger($this->output))
-                ->enable(config('app.debug'))
+                ->enable(Config::get('app.debug'))
                 ->verbose($this->output->isVerbose());
         });
 
         return $this;
     }
 
-    protected function registerEchoRoutes()
+    /**
+     * @return $this
+     */
+    protected function registerEchoRoutes(): StartWebSocketServer
     {
         WebSocketsRouter::echo();
 
@@ -127,9 +147,12 @@ class StartWebSocketServer extends Command
             ->run();
     }
 
+    /**
+     * @return \React\Dns\Resolver\Resolver
+     */
     protected function getDnsResolver(): ReactDnsResolver
     {
-        if (! config('websockets.statistics.perform_dns_lookup')) {
+        if (! Config::get('websockets.statistics.perform_dns_lookup')) {
             return new DnsResolver;
         }
 

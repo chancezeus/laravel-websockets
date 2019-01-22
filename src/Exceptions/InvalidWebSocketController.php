@@ -6,7 +6,11 @@ use Ratchet\WebSocket\MessageComponentInterface;
 
 class InvalidWebSocketController extends \Exception
 {
-    public static function withController(string $controllerClass)
+    /**
+     * @param string $controllerClass
+     * @return static
+     */
+    public static function withController(string $controllerClass): InvalidWebSocketController
     {
         $messageComponentInterfaceClass = MessageComponentInterface::class;
 

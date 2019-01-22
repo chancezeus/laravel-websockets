@@ -2,7 +2,7 @@
 
 namespace BeyondCode\LaravelWebSockets\Server\Logger;
 
-use Exception;
+use Illuminate\Support\Facades\App;
 use Ratchet\ConnectionInterface;
 use Ratchet\MessageComponentInterface;
 
@@ -11,36 +11,62 @@ class HttpLogger extends Logger implements MessageComponentInterface
     /** @var \Ratchet\Http\HttpServerInterface */
     protected $app;
 
+    /**
+     * @param \Ratchet\MessageComponentInterface $app
+     * @return \BeyondCode\LaravelWebSockets\Server\Logger\HttpLogger
+     */
     public static function decorate(MessageComponentInterface $app): self
     {
-        $logger = app(self::class);
+        /** @var HttpLogger $logger */
+        $logger = App::make(self::class);
 
         return $logger->setApp($app);
     }
 
-    public function setApp(MessageComponentInterface $app)
+    /**
+     * @param \Ratchet\MessageComponentInterface $app
+     * @return $this
+     */
+    public function setApp(MessageComponentInterface $app): HttpLogger
     {
         $this->app = $app;
 
         return $this;
     }
 
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     */
     public function onOpen(ConnectionInterface $connection)
     {
         $this->app->onOpen($connection);
     }
 
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @param string $message
+     * @throws \Exception
+     */
     public function onMessage(ConnectionInterface $connection, $message)
     {
         $this->app->onMessage($connection, $message);
     }
 
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @throws \Exception
+     */
     public function onClose(ConnectionInterface $connection)
     {
         $this->app->onClose($connection);
     }
 
-    public function onError(ConnectionInterface $connection, Exception $exception)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @param \Exception $exception
+     * @throws \Exception
+     */
+    public function onError(ConnectionInterface $connection, \Exception $exception)
     {
         $exceptionClass = get_class($exception);
 

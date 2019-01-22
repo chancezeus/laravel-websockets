@@ -6,27 +6,35 @@ use Ratchet\ConnectionInterface;
 
 class FakeStatisticsLogger implements StatisticsLogger
 {
-    public function webSocketMessage(ConnectionInterface $connection)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     */
+    public function webSocketMessage(ConnectionInterface $connection): void
     {
     }
 
-    public function apiMessage($appId)
+    /**
+     * @param string $appId
+     */
+    public function apiMessage(string $appId): void
     {
     }
 
-    public function connection(ConnectionInterface $connection)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     */
+    public function connection(ConnectionInterface $connection): void
     {
     }
 
-    public function disconnection(ConnectionInterface $connection)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     */
+    public function disconnection(ConnectionInterface $connection): void
     {
     }
 
-    protected function initializeStatistics($id)
-    {
-    }
-
-    public function save()
+    public function save(): void
     {
     }
 }

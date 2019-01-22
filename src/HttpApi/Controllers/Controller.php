@@ -2,31 +2,36 @@
 
 namespace BeyondCode\LaravelWebSockets\HttpApi\Controllers;
 
-use Exception;
-use Pusher\Pusher;
-use Illuminate\Http\Request;
-use GuzzleHttp\Psr7\Response;
-use Ratchet\ConnectionInterface;
-use Illuminate\Http\JsonResponse;
-use GuzzleHttp\Psr7\ServerRequest;
-use Ratchet\Http\HttpServerInterface;
-use Psr\Http\Message\RequestInterface;
 use BeyondCode\LaravelWebSockets\Apps\App;
 use BeyondCode\LaravelWebSockets\QueryParameters;
-use Symfony\Component\HttpKernel\Exception\HttpException;
-use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
 use BeyondCode\LaravelWebSockets\WebSockets\Channels\ChannelManager;
+use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Psr7\ServerRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Psr\Http\Message\RequestInterface;
+use Ratchet\ConnectionInterface;
+use Ratchet\Http\HttpServerInterface;
+use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 abstract class Controller implements HttpServerInterface
 {
     /** @var \BeyondCode\LaravelWebSockets\WebSockets\Channels\ChannelManager */
     protected $channelManager;
 
+    /**
+     * @param \BeyondCode\LaravelWebSockets\WebSockets\Channels\ChannelManager $channelManager
+     */
     public function __construct(ChannelManager $channelManager)
     {
         $this->channelManager = $channelManager;
     }
 
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @param \Psr\Http\Message\RequestInterface|null $request
+     */
     public function onOpen(ConnectionInterface $connection, RequestInterface $request = null)
     {
         $serverRequest = (new ServerRequest(
@@ -49,15 +54,26 @@ abstract class Controller implements HttpServerInterface
         $connection->close();
     }
 
+    /**
+     * @param \Ratchet\ConnectionInterface $from
+     * @param string $msg
+     */
     public function onMessage(ConnectionInterface $from, $msg)
     {
     }
 
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     */
     public function onClose(ConnectionInterface $connection)
     {
     }
 
-    public function onError(ConnectionInterface $connection, Exception $exception)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @param \Exception $exception
+     */
+    public function onError(ConnectionInterface $connection, \Exception $exception)
     {
         if (! $exception instanceof HttpException) {
             return;
@@ -74,7 +90,11 @@ abstract class Controller implements HttpServerInterface
         $connection->close();
     }
 
-    public function ensureValidAppId(string $appId)
+    /**
+     * @param string $appId
+     * @return $this
+     */
+    public function ensureValidAppId(string $appId): Controller
     {
         if (! App::findById($appId)) {
             throw new HttpException(401, "Unknown app id `{$appId}` provided.");
@@ -83,31 +103,34 @@ abstract class Controller implements HttpServerInterface
         return $this;
     }
 
+    /**
+     * @param \Illuminate\Http\Request $request
+     * @return $this
+     */
     protected function ensureValidSignature(Request $request)
     {
-        /*
-         * The `auth_signature` & `body_md5` parameters are not included when calculating the `auth_signature` value.
-         *
-         * The `appId`, `appKey` & `channelName` parameters are actually route paramaters and are never supplied by the client.
-         */
-        $params = array_except($request->query(), ['auth_signature', 'body_md5', 'appId', 'appKey', 'channelName']);
-
-        if ($request->getContent() !== '') {
-            $params['body_md5'] = md5($request->getContent());
+        $app = App::findById($request->appId);
+        if (! $app) {
+            throw new HttpException(401, 'Invalid auth signature provided.');
         }
 
-        ksort($params);
+        $signature = $app->generateSignature(
+            $request->getMethod(),
+            $request->path(),
+            $request->query(),
+            $request->getContent()
+        );
 
-        $signature = "{$request->getMethod()}\n/{$request->path()}\n".Pusher::array_implode('=', '&', $params);
-
-        $authSignature = hash_hmac('sha256', $signature, App::findById($request->get('appId'))->secret);
-
-        if ($authSignature !== $request->get('auth_signature')) {
+        if ($signature !== $request->get('auth_signature')) {
             throw new HttpException(401, 'Invalid auth signature provided.');
         }
 
         return $this;
     }
 
+    /**
+     * @param \Illuminate\Http\Request $request
+     * @return mixed
+     */
     abstract public function __invoke(Request $request);
 }

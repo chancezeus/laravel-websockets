@@ -2,12 +2,16 @@
 
 namespace BeyondCode\LaravelWebSockets\WebSockets\Channels;
 
-use stdClass;
 use Ratchet\ConnectionInterface;
 
 class PrivateChannel extends Channel
 {
-    public function subscribe(ConnectionInterface $connection, stdClass $payload)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @param \stdClass $payload
+     * @throws \BeyondCode\LaravelWebSockets\WebSockets\Exceptions\InvalidSignature
+     */
+    public function subscribe(ConnectionInterface $connection, \stdClass $payload): void
     {
         $this->verifySignature($connection, $payload);
 

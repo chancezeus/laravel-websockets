@@ -4,5 +4,5 @@ namespace BeyondCode\LaravelWebSockets\WebSockets\Messages;
 
 interface PusherMessage
 {
-    public function respond();
+    public function respond(): void;
 }

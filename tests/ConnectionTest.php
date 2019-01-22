@@ -34,10 +34,10 @@ class ConnectionTest extends TestCase
         $this->pusherServer->onOpen($connection);
 
         $this->assertInstanceOf(App::class, $connection->app);
-        $this->assertSame(1234, $connection->app->id);
-        $this->assertSame('TestKey', $connection->app->key);
-        $this->assertSame('TestSecret', $connection->app->secret);
-        $this->assertSame('Test App', $connection->app->name);
+        $this->assertSame('1234', $connection->app->getId());
+        $this->assertSame('TestKey', $connection->app->getKey());
+        $this->assertSame('TestSecret', $connection->app->getSecret());
+        $this->assertSame('Test App', $connection->app->getName());
     }
 
     /** @test */

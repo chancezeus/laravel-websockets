@@ -2,31 +2,43 @@
 
 namespace BeyondCode\LaravelWebSockets\Server\Logger;
 
-use Exception;
+use BeyondCode\LaravelWebSockets\QueryParameters;
+use Illuminate\Support\Facades\App;
 use Ratchet\ConnectionInterface;
 use Ratchet\RFC6455\Messaging\MessageInterface;
 use Ratchet\WebSocket\MessageComponentInterface;
-use BeyondCode\LaravelWebSockets\QueryParameters;
 
 class WebsocketsLogger extends Logger implements MessageComponentInterface
 {
     /** @var \Ratchet\Http\HttpServerInterface */
     protected $app;
 
+    /**
+     * @param \Ratchet\WebSocket\MessageComponentInterface $app
+     * @return static
+     */
     public static function decorate(MessageComponentInterface $app): self
     {
-        $logger = app(self::class);
+        /** @var WebsocketsLogger $logger */
+        $logger = App::make(self::class);
 
         return $logger->setApp($app);
     }
 
-    public function setApp(MessageComponentInterface $app)
+    /**
+     * @param \Ratchet\WebSocket\MessageComponentInterface $app
+     * @return $this
+     */
+    public function setApp(MessageComponentInterface $app): WebsocketsLogger
     {
         $this->app = $app;
 
         return $this;
     }
 
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     */
     public function onOpen(ConnectionInterface $connection)
     {
         $appKey = QueryParameters::create($connection->httpRequest)->get('appKey');
@@ -36,13 +48,22 @@ class WebsocketsLogger extends Logger implements MessageComponentInterface
         $this->app->onOpen(ConnectionLogger::decorate($connection));
     }
 
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @param \Ratchet\RFC6455\Messaging\MessageInterface $message
+     * @throws \Exception
+     */
     public function onMessage(ConnectionInterface $connection, MessageInterface $message)
     {
-        $this->info("{$connection->app->id}: connection id {$connection->socketId} received message: {$message->getPayload()}.");
+        $this->info("{$connection->app->getId()}: connection id {$connection->socketId} received message: {$message->getPayload()}.");
 
         $this->app->onMessage(ConnectionLogger::decorate($connection), $message);
     }
 
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @throws \Exception
+     */
     public function onClose(ConnectionInterface $connection)
     {
         $socketId = $connection->socketId ?? null;
@@ -52,11 +73,16 @@ class WebsocketsLogger extends Logger implements MessageComponentInterface
         $this->app->onClose(ConnectionLogger::decorate($connection));
     }
 
-    public function onError(ConnectionInterface $connection, Exception $exception)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @param \Exception $exception
+     * @throws \Exception
+     */
+    public function onError(ConnectionInterface $connection, \Exception $exception)
     {
         $exceptionClass = get_class($exception);
 
-        $appId = $connection->app->id ?? 'Unknown app id';
+        $appId = $connection->app->getId() ?? 'Unknown app id';
 
         $message = "{$appId}: exception `{$exceptionClass}` thrown: `{$exception->getMessage()}`.";
 

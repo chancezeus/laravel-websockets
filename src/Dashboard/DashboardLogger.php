@@ -2,9 +2,9 @@
 
 namespace BeyondCode\LaravelWebSockets\Dashboard;
 
-use stdClass;
-use Ratchet\ConnectionInterface;
 use BeyondCode\LaravelWebSockets\WebSockets\Channels\ChannelManager;
+use Illuminate\Support\Facades\App;
+use Ratchet\ConnectionInterface;
 
 class DashboardLogger
 {
@@ -17,56 +17,84 @@ class DashboardLogger
     const TYPE_CLIENT_MESSAGE = 'client-message';
     const TYPE_API_MESSAGE = 'api-message';
 
-    public static function connection(ConnectionInterface $connection)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     */
+    public static function connection(ConnectionInterface $connection): void
     {
         /** @var \GuzzleHttp\Psr7\Request $request */
         $request = $connection->httpRequest;
 
-        static::log($connection->app->id, static::TYPE_CONNECTION, [
+        static::log($connection->app->getId(), static::TYPE_CONNECTION, [
             'details' => "Origin: {$request->getUri()->getScheme()}://{$request->getUri()->getHost()}",
             'socketId' => $connection->socketId,
         ]);
     }
 
-    public static function occupied(ConnectionInterface $connection, string $channelName)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @param string $channelName
+     */
+    public static function occupied(ConnectionInterface $connection, string $channelName): void
     {
-        static::log($connection->app->id, static::TYPE_OCCUPIED, [
+        static::log($connection->app->getId(), static::TYPE_OCCUPIED, [
             'details' => "Channel: {$channelName}",
         ]);
     }
 
-    public static function subscribed(ConnectionInterface $connection, string $channelName)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @param string $channelName
+     */
+    public static function subscribed(ConnectionInterface $connection, string $channelName): void
     {
-        static::log($connection->app->id, static::TYPE_SUBSCRIBED, [
+        static::log($connection->app->getId(), static::TYPE_SUBSCRIBED, [
             'socketId' => $connection->socketId,
             'details' => "Channel: {$channelName}",
         ]);
     }
 
-    public static function clientMessage(ConnectionInterface $connection, stdClass $payload)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @param \stdClass $payload
+     */
+    public static function clientMessage(ConnectionInterface $connection, \stdClass $payload)
     {
-        static::log($connection->app->id, static::TYPE_CLIENT_MESSAGE, [
+        static::log($connection->app->getId(), static::TYPE_CLIENT_MESSAGE, [
             'details' => "Channel: {$payload->channel}, Event: {$payload->event}",
             'socketId' => $connection->socketId,
             'data' => json_encode($payload),
         ]);
     }
 
-    public static function disconnection(ConnectionInterface $connection)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     */
+    public static function disconnection(ConnectionInterface $connection): void
     {
-        static::log($connection->app->id, static::TYPE_DISCONNECTION, [
+        static::log($connection->app->getId(), static::TYPE_DISCONNECTION, [
             'socketId' => $connection->socketId,
         ]);
     }
 
-    public static function vacated(ConnectionInterface $connection, string $channelName)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @param string $channelName
+     */
+    public static function vacated(ConnectionInterface $connection, string $channelName): void
     {
-        static::log($connection->app->id, static::TYPE_VACATED, [
+        static::log($connection->app->getId(), static::TYPE_VACATED, [
             'details' => "Channel: {$channelName}",
         ]);
     }
 
-    public static function apiMessage($appId, string $channel, string $event, string $payload)
+    /**
+     * @param string $appId
+     * @param string $channel
+     * @param string $event
+     * @param string $payload
+     */
+    public static function apiMessage(string $appId, string $channel, string $event, string $payload): void
     {
         static::log($appId, static::TYPE_API_MESSAGE, [
             'details' => "Channel: {$channel}, Event: {$event}",
@@ -74,19 +102,24 @@ class DashboardLogger
         ]);
     }
 
-    public static function log($appId, string $type, array $attributes = [])
+    /**
+     * @param string $appId
+     * @param string $type
+     * @param array $attributes
+     */
+    public static function log(string $appId, string $type, array $attributes = []): void
     {
-        $channelName = static::LOG_CHANNEL_PREFIX.$type;
+        $channelName = static::LOG_CHANNEL_PREFIX . $type;
 
-        $channel = app(ChannelManager::class)->find($appId, $channelName);
+        $channel = App::make(ChannelManager::class)->find($appId, $channelName);
 
         optional($channel)->broadcast([
             'event' => 'log-message',
             'channel' => $channelName,
             'data' => [
-                'type' => $type,
-                'time' => strftime('%H:%M:%S'),
-            ] + $attributes,
+                    'type' => $type,
+                    'time' => strftime('%H:%M:%S'),
+                ] + $attributes,
         ]);
     }
 }

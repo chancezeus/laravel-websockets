@@ -22,16 +22,19 @@
         }
     ],
     "require": {
-        "php": "^7.1",
+        "php": "^7.2",
         "ext-json": "*",
         "cboden/ratchet": "^0.4.1",
         "clue/buzz-react": "^2.5",
         "guzzlehttp/psr7": "^1.5",
+        "illuminate/auth": "5.7.*",
         "illuminate/broadcasting": "5.7.*",
+        "illuminate/config": "5.7.*",
         "illuminate/console": "5.7.*",
         "illuminate/http": "5.7.*",
         "illuminate/routing": "5.7.*",
         "illuminate/support": "5.7.*",
+        "illuminate/validation": "5.7.*",
         "pusher/pusher-php-server": "~3.0",
         "symfony/http-kernel": "~4.0",
         "symfony/psr-http-message-bridge": "^1.1"

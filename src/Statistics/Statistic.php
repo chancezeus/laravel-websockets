@@ -28,7 +28,7 @@ class Statistic
 
     public function isEnabled(): bool
     {
-        return App::findById($this->appId)->statisticsEnabled;
+        return App::findById($this->appId)->isStatisticsEnabled();
     }
 
     public function connection()
@@ -55,6 +55,9 @@ class Statistic
         $this->apiMessageCount++;
     }
 
+    /**
+     * @param int $currentConnectionCount
+     */
     public function reset(int $currentConnectionCount)
     {
         $this->currentConnectionCount = $currentConnectionCount;

@@ -2,10 +2,9 @@
 
 namespace BeyondCode\LaravelWebSockets\WebSockets\Channels;
 
-use stdClass;
-use Ratchet\ConnectionInterface;
 use BeyondCode\LaravelWebSockets\Dashboard\DashboardLogger;
 use BeyondCode\LaravelWebSockets\WebSockets\Exceptions\InvalidSignature;
+use Ratchet\ConnectionInterface;
 
 class Channel
 {
@@ -15,22 +14,36 @@ class Channel
     /** @var \Ratchet\ConnectionInterface[] */
     protected $subscribedConnections = [];
 
+    /**
+     * @param string $channelName
+     */
     public function __construct(string $channelName)
     {
         $this->channelName = $channelName;
     }
 
+    /**
+     * @return bool
+     */
     public function hasConnections(): bool
     {
         return count($this->subscribedConnections) > 0;
     }
 
+    /**
+     * @return \Ratchet\ConnectionInterface[]
+     */
     public function getSubscribedConnections(): array
     {
         return $this->subscribedConnections;
     }
 
-    protected function verifySignature(ConnectionInterface $connection, stdClass $payload)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @param \stdClass $payload
+     * @throws \BeyondCode\LaravelWebSockets\WebSockets\Exceptions\InvalidSignature
+     */
+    protected function verifySignature(ConnectionInterface $connection, \stdClass $payload): void
     {
         $signature = "{$connection->socketId}:{$this->channelName}";
 
@@ -38,15 +51,17 @@ class Channel
             $signature .= ":{$payload->channel_data}";
         }
 
-        if (str_after($payload->auth, ':') !== hash_hmac('sha256', $signature, $connection->app->secret)) {
+        if (str_after($payload->auth, ':') !== hash_hmac('sha256', $signature, $connection->app->getSecret())) {
             throw new InvalidSignature();
         }
     }
 
-    /*
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @param \stdClass $payload
      * @link https://pusher.com/docs/pusher_protocol#presence-channel-events
      */
-    public function subscribe(ConnectionInterface $connection, stdClass $payload)
+    public function subscribe(ConnectionInterface $connection, \stdClass $payload): void
     {
         $this->saveConnection($connection);
 
@@ -56,7 +71,10 @@ class Channel
         ]));
     }
 
-    public function unsubscribe(ConnectionInterface $connection)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     */
+    public function unsubscribe(ConnectionInterface $connection): void
     {
         unset($this->subscribedConnections[$connection->socketId]);
 
@@ -65,7 +83,10 @@ class Channel
         }
     }
 
-    protected function saveConnection(ConnectionInterface $connection)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     */
+    protected function saveConnection(ConnectionInterface $connection): void
     {
         $hadConnectionsPreviously = $this->hasConnections();
 
@@ -78,22 +99,35 @@ class Channel
         DashboardLogger::subscribed($connection, $this->channelName);
     }
 
-    public function broadcast($payload)
+    /**
+     * @param mixed $payload
+     */
+    public function broadcast($payload): void
     {
         foreach ($this->subscribedConnections as $connection) {
             $connection->send(json_encode($payload));
         }
     }
 
-    public function broadcastToOthers(ConnectionInterface $connection, $payload)
+    /**
+     * @param ConnectionInterface $connection
+     * @param mixed $payload
+     */
+    public function broadcastToOthers(ConnectionInterface $connection, $payload): void
     {
         $this->broadcastToEveryoneExcept($payload, $connection->socketId);
     }
 
-    public function broadcastToEveryoneExcept($payload, ?string $socketId = null)
+    /**
+     * @param $payload
+     * @param string|null $socketId
+     */
+    public function broadcastToEveryoneExcept($payload, ?string $socketId = null): void
     {
         if (is_null($socketId)) {
-            return $this->broadcast($payload);
+            $this->broadcast($payload);
+
+            return;
         }
 
         foreach ($this->subscribedConnections as $connection) {
@@ -103,6 +137,9 @@ class Channel
         }
     }
 
+    /**
+     * @return array
+     */
     public function toArray(): array
     {
         return [

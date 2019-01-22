@@ -2,12 +2,18 @@
 
 namespace BeyondCode\LaravelWebSockets\HttpApi\Controllers;
 
+use BeyondCode\LaravelWebSockets\WebSockets\Channels\Channel;
+use BeyondCode\LaravelWebSockets\WebSockets\Channels\PresenceChannel;
+use BeyondCode\LaravelWebSockets\WebSockets\Channels\PrivateChannel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use BeyondCode\LaravelWebSockets\WebSockets\Channels\PresenceChannel;
 
 class FetchChannelsController extends Controller
 {
+    /**
+     * @param \Illuminate\Http\Request $request
+     * @return array
+     */
     public function __invoke(Request $request)
     {
         $channels = Collection::make($this->channelManager->getChannels($request->appId))->filter(function ($channel) {
@@ -15,13 +21,15 @@ class FetchChannelsController extends Controller
         });
 
         if ($request->has('filter_by_prefix')) {
-            $channels = $channels->filter(function ($channel, $channelName) use ($request) {
+            $channels = $channels->filter(function (Channel $channel, string $channelName) use ($request) {
                 return starts_with($channelName, $request->filter_by_prefix);
             });
         }
 
         return [
-            'channels' => $channels->map(function ($channel) {
+            'channels' => $channels->map(function (Channel $channel) {
+                /** @var PrivateChannel|PresenceChannel $channel */
+
                 return [
                     'user_count' => count($channel->getUsers()),
                 ];

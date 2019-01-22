@@ -2,13 +2,18 @@
 
 namespace BeyondCode\LaravelWebSockets\Dashboard\Http\Controllers;
 
-use Pusher\Pusher;
-use Illuminate\Http\Request;
 use BeyondCode\LaravelWebSockets\Apps\App;
 use Illuminate\Broadcasting\Broadcasters\PusherBroadcaster;
+use Illuminate\Http\Request;
+use Pusher\Pusher;
 
 class AuthenticateDashboard
 {
+    /**
+     * @param \Illuminate\Http\Request $request
+     * @return mixed
+     * @throws \Pusher\PusherException
+     */
     public function __invoke(Request $request)
     {
         /**
@@ -19,9 +24,9 @@ class AuthenticateDashboard
         $app = App::findById($request->header('x-app-id'));
 
         $broadcaster = new PusherBroadcaster(new Pusher(
-            $app->key,
-            $app->secret,
-            $app->id,
+            $app->getKey(),
+            $app->getSecret(),
+            $app->getId(),
             []
         ));
 

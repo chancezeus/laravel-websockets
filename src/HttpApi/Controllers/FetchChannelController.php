@@ -7,6 +7,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class FetchChannelController extends Controller
 {
+    /**
+     * @param \Illuminate\Http\Request $request
+     * @return array
+     */
     public function __invoke(Request $request)
     {
         $channel = $this->channelManager->find($request->appId, $request->channelName);

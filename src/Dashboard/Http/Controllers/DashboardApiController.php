@@ -2,11 +2,19 @@
 
 namespace BeyondCode\LaravelWebSockets\Dashboard\Http\Controllers;
 
+use Illuminate\Support\Facades\Config;
+
 class DashboardApiController
 {
-    public function getStatistics($appId)
+    /**
+     * @param string $appId
+     * @return array
+     */
+    public function getStatistics(string $appId): array
     {
-        $webSocketsStatisticsEntryModelClass = config('websockets.statistics.model');
+        $webSocketsStatisticsEntryModelClass = Config::get('websockets.statistics.model');
+
+        /** @var \Illuminate\Support\Collection|\BeyondCode\LaravelWebSockets\Statistics\Models\WebSocketsStatisticsEntry[] $statistics */
         $statistics = $webSocketsStatisticsEntryModelClass::where('app_id', $appId)->latest()->limit(120)->get();
 
         $statisticData = $statistics->map(function ($statistic) {

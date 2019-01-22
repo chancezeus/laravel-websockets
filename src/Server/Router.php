@@ -2,17 +2,18 @@
 
 namespace BeyondCode\LaravelWebSockets\Server;
 
+use BeyondCode\LaravelWebSockets\Exceptions\InvalidWebSocketController;
+use BeyondCode\LaravelWebSockets\HttpApi\Controllers\FetchChannelController;
+use BeyondCode\LaravelWebSockets\HttpApi\Controllers\FetchChannelsController;
+use BeyondCode\LaravelWebSockets\HttpApi\Controllers\FetchUsersController;
+use BeyondCode\LaravelWebSockets\HttpApi\Controllers\TriggerEventController;
+use BeyondCode\LaravelWebSockets\Server\Logger\WebsocketsLogger;
+use BeyondCode\LaravelWebSockets\WebSockets\WebSocketHandler;
+use Illuminate\Support\Facades\App;
+use Ratchet\WebSocket\MessageComponentInterface;
 use Ratchet\WebSocket\WsServer;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
-use Ratchet\WebSocket\MessageComponentInterface;
-use BeyondCode\LaravelWebSockets\WebSockets\WebSocketHandler;
-use BeyondCode\LaravelWebSockets\Server\Logger\WebsocketsLogger;
-use BeyondCode\LaravelWebSockets\Exceptions\InvalidWebSocketController;
-use BeyondCode\LaravelWebSockets\HttpApi\Controllers\FetchUsersController;
-use BeyondCode\LaravelWebSockets\HttpApi\Controllers\FetchChannelController;
-use BeyondCode\LaravelWebSockets\HttpApi\Controllers\TriggerEventController;
-use BeyondCode\LaravelWebSockets\HttpApi\Controllers\FetchChannelsController;
 
 class Router
 {
@@ -24,6 +25,9 @@ class Router
         $this->routes = new RouteCollection;
     }
 
+    /**
+     * @return \Symfony\Component\Routing\RouteCollection
+     */
     public function getRoutes(): RouteCollection
     {
         return $this->routes;
@@ -39,32 +43,57 @@ class Router
         $this->get('/apps/{appId}/channels/{channelName}/users', FetchUsersController::class);
     }
 
-    public function get(string $uri, $action)
+    /**
+     * @param string $uri
+     * @param string $action
+     */
+    public function get(string $uri, string $action)
     {
         $this->addRoute('GET', $uri, $action);
     }
 
-    public function post(string $uri, $action)
+    /**
+     * @param string $uri
+     * @param string $action
+     */
+    public function post(string $uri, string $action)
     {
         $this->addRoute('POST', $uri, $action);
     }
 
-    public function put(string $uri, $action)
+    /**
+     * @param string $uri
+     * @param string $action
+     */
+    public function put(string $uri, string $action)
     {
         $this->addRoute('PUT', $uri, $action);
     }
 
-    public function patch(string $uri, $action)
+    /**
+     * @param string $uri
+     * @param string $action
+     */
+    public function patch(string $uri, string $action)
     {
         $this->addRoute('PATCH', $uri, $action);
     }
 
-    public function delete(string $uri, $action)
+    /**
+     * @param string $uri
+     * @param string $action
+     */
+    public function delete(string $uri, string $action)
     {
         $this->addRoute('DELETE', $uri, $action);
     }
 
-    public function webSocket(string $uri, $action)
+    /**
+     * @param string $uri
+     * @param string $action
+     * @throws \BeyondCode\LaravelWebSockets\Exceptions\InvalidWebSocketController
+     */
+    public function webSocket(string $uri, string $action)
     {
         if (! is_subclass_of($action, MessageComponentInterface::class)) {
             throw InvalidWebSocketController::withController($action);
@@ -73,29 +102,44 @@ class Router
         $this->get($uri, $action);
     }
 
-    public function addRoute(string $method, string $uri, $action)
+    /**
+     * @param string $method
+     * @param string $uri
+     * @param string $action
+     */
+    public function addRoute(string $method, string $uri, string $action): void
     {
         $this->routes->add($uri, $this->getRoute($method, $uri, $action));
     }
 
-    protected function getRoute(string $method, string $uri, $action): Route
+    /**
+     * @param string $method
+     * @param string $uri
+     * @param string $action
+     * @return \Symfony\Component\Routing\Route
+     */
+    protected function getRoute(string $method, string $uri, string $action): Route
     {
         /**
          * If the given action is a class that handles WebSockets, then it's not a regular
          * controller but a WebSocketHandler that needs to converted to a WsServer.
          *
-         * If the given action is a regular controller we'll just instanciate it.
+         * If the given action is a regular controller we'll just instantiate it.
          */
         $action = is_subclass_of($action, MessageComponentInterface::class)
             ? $this->createWebSocketsServer($action)
-            : app($action);
+            : App::make($action);
 
         return new Route($uri, ['_controller' => $action], [], [], null, [], [$method]);
     }
 
+    /**
+     * @param string $action
+     * @return \Ratchet\WebSocket\WsServer
+     */
     protected function createWebSocketsServer(string $action): WsServer
     {
-        $app = app($action);
+        $app = App::make($action);
 
         if (WebsocketsLogger::isEnabled()) {
             $app = WebsocketsLogger::decorate($app);

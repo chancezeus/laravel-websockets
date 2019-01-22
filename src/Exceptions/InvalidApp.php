@@ -6,12 +6,21 @@ use Exception;
 
 class InvalidApp extends Exception
 {
-    public static function notFound($appId)
+    /**
+     * @param string $appId
+     * @return static
+     */
+    public static function notFound(string $appId): InvalidApp
     {
         return new static("Could not find app for app id `{$appId}`.");
     }
 
-    public static function valueIsRequired($name, $appId)
+    /**
+     * @param string $name
+     * @param string $appId
+     * @return static
+     */
+    public static function valueIsRequired($name, $appId): InvalidApp
     {
         return new static("{$name} is required but was empty for app id `{$appId}`.");
     }

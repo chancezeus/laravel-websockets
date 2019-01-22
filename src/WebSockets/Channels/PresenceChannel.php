@@ -2,22 +2,28 @@
 
 namespace BeyondCode\LaravelWebSockets\WebSockets\Channels;
 
-use stdClass;
 use Ratchet\ConnectionInterface;
 
 class PresenceChannel extends Channel
 {
+    /** @var \stdClass[] */
     protected $users = [];
 
+    /**
+     * @return \stdClass[]
+     */
     public function getUsers(): array
     {
         return $this->users;
     }
 
-    /*
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     * @param \stdClass $payload
+     * @throws \BeyondCode\LaravelWebSockets\WebSockets\Exceptions\InvalidSignature
      * @link https://pusher.com/docs/pusher_protocol#presence-channel-events
      */
-    public function subscribe(ConnectionInterface $connection, stdClass $payload)
+    public function subscribe(ConnectionInterface $connection, \stdClass $payload): void
     {
         $this->verifySignature($connection, $payload);
 
@@ -40,7 +46,10 @@ class PresenceChannel extends Channel
         ]);
     }
 
-    public function unsubscribe(ConnectionInterface $connection)
+    /**
+     * @param \Ratchet\ConnectionInterface $connection
+     */
+    public function unsubscribe(ConnectionInterface $connection): void
     {
         parent::unsubscribe($connection);
 
@@ -59,6 +68,9 @@ class PresenceChannel extends Channel
         unset($this->users[$connection->socketId]);
     }
 
+    /**
+     * @return array
+     */
     protected function getChannelData(): array
     {
         return [
@@ -70,6 +82,9 @@ class PresenceChannel extends Channel
         ];
     }
 
+    /**
+     * @return array
+     */
     public function toArray(): array
     {
         return array_merge(parent::toArray(), [
@@ -77,6 +92,9 @@ class PresenceChannel extends Channel
         ]);
     }
 
+    /**
+     * @return string[]
+     */
     protected function getUserIds(): array
     {
         $userIds = array_map(function ($channelData) {
@@ -86,6 +104,9 @@ class PresenceChannel extends Channel
         return array_values($userIds);
     }
 
+    /**
+     * @return \stdClass[]
+     */
     protected function getHash(): array
     {
         $hash = [];

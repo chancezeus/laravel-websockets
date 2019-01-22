@@ -27,12 +27,12 @@ class ConfigAppProviderTest extends TestCase
         /** @var $app */
         $app = $apps[0];
 
-        $this->assertEquals('Test App', $app->name);
-        $this->assertEquals(1234, $app->id);
-        $this->assertEquals('TestKey', $app->key);
-        $this->assertEquals('TestSecret', $app->secret);
-        $this->assertFalse($app->clientMessagesEnabled);
-        $this->assertTrue($app->statisticsEnabled);
+        $this->assertEquals('Test App', $app->getName());
+        $this->assertEquals(1234, $app->getId());
+        $this->assertEquals('TestKey', $app->getKey());
+        $this->assertEquals('TestSecret', $app->getSecret());
+        $this->assertFalse($app->isClientMessagesEnabled());
+        $this->assertTrue($app->isStatisticsEnabled());
     }
 
     /** @test */
@@ -44,12 +44,12 @@ class ConfigAppProviderTest extends TestCase
 
         $app = $this->configAppProvider->findById(1234);
 
-        $this->assertEquals('Test App', $app->name);
-        $this->assertEquals(1234, $app->id);
-        $this->assertEquals('TestKey', $app->key);
-        $this->assertEquals('TestSecret', $app->secret);
-        $this->assertFalse($app->clientMessagesEnabled);
-        $this->assertTrue($app->statisticsEnabled);
+        $this->assertEquals('Test App', $app->getName());
+        $this->assertEquals(1234, $app->getId());
+        $this->assertEquals('TestKey', $app->getKey());
+        $this->assertEquals('TestSecret', $app->getSecret());
+        $this->assertFalse($app->isClientMessagesEnabled());
+        $this->assertTrue($app->isStatisticsEnabled());
     }
 
     /** @test */
@@ -61,28 +61,11 @@ class ConfigAppProviderTest extends TestCase
 
         $app = $this->configAppProvider->findByKey('TestKey');
 
-        $this->assertEquals('Test App', $app->name);
-        $this->assertEquals(1234, $app->id);
-        $this->assertEquals('TestKey', $app->key);
-        $this->assertEquals('TestSecret', $app->secret);
-        $this->assertFalse($app->clientMessagesEnabled);
-        $this->assertTrue($app->statisticsEnabled);
-    }
-
-    /** @test */
-    public function it_can_find_app_by_secret()
-    {
-        $app = $this->configAppProvider->findBySecret('InvalidSecret');
-
-        $this->assertNull($app);
-
-        $app = $this->configAppProvider->findBySecret('TestSecret');
-
-        $this->assertEquals('Test App', $app->name);
-        $this->assertEquals(1234, $app->id);
-        $this->assertEquals('TestKey', $app->key);
-        $this->assertEquals('TestSecret', $app->secret);
-        $this->assertFalse($app->clientMessagesEnabled);
-        $this->assertTrue($app->statisticsEnabled);
+        $this->assertEquals('Test App', $app->getName());
+        $this->assertEquals(1234, $app->getId());
+        $this->assertEquals('TestKey', $app->getKey());
+        $this->assertEquals('TestSecret', $app->getSecret());
+        $this->assertFalse($app->isClientMessagesEnabled());
+        $this->assertTrue($app->isStatisticsEnabled());
     }
 }

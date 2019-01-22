@@ -102,7 +102,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $message = new Message(json_encode([
             'event' => 'pusher:subscribe',
             'data' => [
-                'auth' => $connection->app->key.':'.hash_hmac('sha256', $signature, $connection->app->secret),
+                'auth' => $connection->app->getKey().':'.hash_hmac('sha256', $signature, $connection->app->getSecret()),
                 'channel' => $channel,
                 'channel_data' => json_encode($channelData),
             ],
@@ -115,7 +115,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
     protected function getChannel(ConnectionInterface $connection, string $channelName)
     {
-        return $this->channelManager->findOrCreate($connection->app->id, $channelName);
+        return $this->channelManager->findOrCreate($connection->app->getId(), $channelName);
     }
 
     protected function markTestAsPassed()

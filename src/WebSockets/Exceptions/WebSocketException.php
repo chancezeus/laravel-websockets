@@ -6,6 +6,9 @@ use Exception;
 
 class WebSocketException extends Exception
 {
+    /**
+     * @return array
+     */
     public function getPayload()
     {
         return [
